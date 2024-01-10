@@ -254,7 +254,7 @@ def initVertexBuffer():
 	# third argument is criptic - in c_types if you multiply a data type with an integer you create an array of that type
 	glBufferData(	GL_ARRAY_BUFFER,
 					len(bufferData) * elementSize,
-					bufferData,
+					(ctypes.c_float * len(bufferData))(*bufferData),
 					GL_STATIC_DRAW
 	)
 
@@ -304,7 +304,7 @@ def initTextures(texFilename):
 
 def loadTexture(texFilename):
 	# load texture - flip int verticallt to convert from pillow to OpenGL orientation
-	image = Image.open(texFilename).transpose(Image.FLIP_TOP_BOTTOM)
+	image = Image.open(texFilename).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
 
 	# create a new id
 	texID = glGenTextures(1)

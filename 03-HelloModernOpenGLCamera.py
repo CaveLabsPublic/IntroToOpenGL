@@ -204,10 +204,11 @@ def initVertexBuffer():
 	glBindBuffer(GL_ARRAY_BUFFER, VBO)
 
 	# set data
-	bufferData = vertexPositions
-	glBufferData( # PyOpenGL allows for the omission of the size parameter
+	# third argument is criptic - in c_types if you multiply a data type with an integer you create an array of that type
+	# PyOpenGL allows for the omission of the size parameter
+	glBufferData(
 		GL_ARRAY_BUFFER,
-		bufferData,
+		(ctypes.c_float * len(vertexPositions))(*vertexPositions),
 		GL_STATIC_DRAW
 	)
 

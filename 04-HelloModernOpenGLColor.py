@@ -224,8 +224,7 @@ def initVertexBuffer():
 	# third argument is criptic - in c_types if you multiply a data type with an integer you create an array of that type
 	glBufferData(	GL_ARRAY_BUFFER,
 					len(bufferData)*elementSize,
-					bufferData,
-#					(ctypes.c_float * len(bufferData))(*bufferData),
+					(ctypes.c_float * len(bufferData))(*bufferData),
 					GL_STATIC_DRAW
 	)
 
