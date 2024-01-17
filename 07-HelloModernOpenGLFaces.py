@@ -266,7 +266,7 @@ def initVertexBufferData():
 
 	finalVertexPositions = []
 	finalVertexColors = []
-	finalVertexUvs = []
+	finalVertexUVs = []
 
 	# go over faces and assemble an array for all vertex data
 	faceID = 0
@@ -274,11 +274,11 @@ def initVertexBufferData():
 		for vertex in face:
 			finalVertexPositions.extend(vertexPositions[vertex])
 			finalVertexColors.extend(faceColors[faceID])
-			finalVertexUvs.extend(vertexUVs[vertex])
+			finalVertexUVs.extend(vertexUVs[vertex])
 
 		faceID += 1
 
-	VBOData = numpy.array(finalVertexPositions + finalVertexColors + finalVertexUvs, dtype='float32')
+	VBOData = numpy.array(finalVertexPositions + finalVertexColors + finalVertexUVs, dtype='float32')
 
 
 # Set up the vertex buffer that will store our vertex coordinates for OpenGL's access

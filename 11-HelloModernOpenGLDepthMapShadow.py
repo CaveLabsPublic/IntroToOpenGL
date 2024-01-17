@@ -9,10 +9,15 @@ import numpy
 
 #
 # GLOBALS
+windowWidth = 800
+windowHeight = 800
 vertexDim = 4
 
 # Global variable to represent the compiled shader program, written in GLSL
 objectProgramID = None
+
+# we need another shader for depth map rendering
+depthMapProgramID = None
 
 # Global variables for buffer objects
 VAO_Object = None
@@ -25,7 +30,7 @@ groundVBOData = None
 # Global variable for texture
 tex1ID = -1
 
-# create a box as ground to show the shadow
+# create two boxes: one as ground to show the shadow and the other as a shadow caster
 # our vertices has ids like below
 #		  3---------2
 #		 /|        /|
@@ -34,102 +39,48 @@ tex1ID = -1
 #       |/       |/
 #       4--------5
 groundVertexPositions = [
-	[-10.0, 0.0, 10.0, 1.0],
-	[10.0, 0.0, 10.0, 1.0],
-	[10.0, 0.0, -10.0, 1.0],
-	[-10.0, 0.0, -10.0, 1.0],
-	[-10.0, -0.2, 10.0, 1.0],
-	[10.0, -0.2, 10.0, 1.0],
-	[10.0, -0.2, -10.0, 1.0],
-	[-10.0, -0.2, -10.0, 1.0,]
+	[-15.0, 0.0, 15.0, 1.0],
+	[15.0, 0.0, 15.0, 1.0],
+	[15.0, 0.0, -15.0, 1.0],
+	[-15.0, 0.0, -15.0, 1.0],
+	[-15.0, -0.2, 15.0, 1.0],
+	[15.0, -0.2, 15.0, 1.0],
+	[15.0, -0.2, -15.0, 1.0],
+	[-15.0, -0.2, -15.0, 1.0,]
+]
+
+objectVertexPositions = [
+	[-1.5, 0.0, 1.5, 1.0],
+	[1.5, 0.0, 1.5, 1.0],
+	[1.5, 0.0, -1.5, 1.0],
+	[-1.5, 0.0, -1.5, 1.0],
+	[-1.5, -3.0, 1.5, 1.0],
+	[1.5, -3.0, 1.5, 1.0],
+	[1.5, -3.0, -1.5, 1.0],
+	[-1.5, -3.0, -1.5, 1.0,]
 ]
 
 # we have 6 faces
 # we store indices of the vertices per face
-nGroundFaces = 6
-nGroundVertices = nGroundFaces * 4
-groundFaces = [
+nFaces = 6
+nVertices = nFaces * 4
+faces = [
 	[0, 1, 2, 3],
-	[0, 4, 5, 1],
-	[1, 5, 6, 2],
-	[2, 6, 7, 3],
-	[3, 7, 4, 0],
+	[4, 5, 1, 0],
+	[5, 6, 2, 1],
+	[6, 7, 3, 2],
+	[7, 4, 0, 3],
 	[7, 6, 5, 4]
 ]
 
 # all faces are white
-groundFaceColors = [
+faceColors = [
 	[1.0, 1.0, 0.0, 1.0],
 	[1.0, 0.0, 1.0, 1.0],
 	[0.0, 1.0, 0.0, 1.0],
 	[0.0, 1.0, 1.0, 1.0],
 	[0.0, 0.0, 1.0, 1.0],
 	[1.0, 1.0, 0.0, 1.0]
-]
-
-# arbitrary uvs for the ground as we dont need texture mapping
-groundVertexUVs = [
-	[0.33, 0.33],
-	[0.66, 0.33],
-	[0.66, 0.66],
-	[0.33, 0.66],
-	[0.0, 0.0],
-	[1.0, 0.0],
-	[1.0, 1.0],
-	[0.0, 1.0]
-]
-
-# create an array to hold positions of our vertices. numpy array is directly transferable to OpenGL
-# our vertices has ids like below
-#       4---------5
-#       |\       /|
-#       | 2-----3 |
-#       | |     | |
-#       | 0-----1 |
-#       |/       \|
-#       6---------7
-objectVertexPositions = [
-	[-1.0, -1.0, 0.0, 1.0],
-	[1.0, -1.0, 0.0, 1.0],
-	[-1.0, 1.0, 0.0, 1.0],
-	[1.0, 1.0, 0.0, 1.0],
-	[-2.0, 2.0, -1.0, 1.0],
-	[2.0, 2.0, -1.0, 1.0],
-	[-2.0, -2.0, -1.0, 1.0],
-	[2.0, -2.0, -1.0, 1.0,]
-]
-
-# we have 5 faces
-# we store indices of the vertices per face
-nObjectFaces = 5
-nObjectVertices = nObjectFaces * 4
-objectFaces = [
-	[0, 1, 3, 2],
-	[2, 3, 5, 4],
-	[6, 7, 1, 0],
-	[1, 7, 5, 3],
-	[0, 2, 4, 6]
-]
-
-# random colors for faces
-objectFaceColors = [
-	[1.0, 0.0, 0.0, 1.0],
-	[0.0, 1.0, 0.0, 1.0],
-	[0.0, 0.0, 1.0, 1.0],
-	[1.0, 1.0, 0.0, 1.0],
-	[0.0, 1.0, 1.0, 1.0]
-]
-
-# faces occupy [0,1] space in u and v and they are unfolded like the projection of the shape into XY plane
-objectVertexUVs = [
-	[0.33, 0.33],
-	[0.66, 0.33],
-	[0.33, 0.66],
-	[0.66, 0.66],
-	[0.0, 1.0],
-	[1.0, 1.0],
-	[0.0, 0.0],
-	[1.0, 0.0]
 ]
 
 # String containing vertex shader program written in GLSL
@@ -177,14 +128,55 @@ uniform vec4 lightColor;
 uniform float lightIntensity;
 uniform float lightCone;
 uniform float lightPenumbra;
+uniform mat4 lightView;
+uniform mat4 lightProj;
+uniform sampler2D depthMapTex;
 
 uniform sampler2D tex1;
+
+float calcShadow(vec4 fragPosLightSpace)
+{
+	// perform perspective divide to go to NDC
+	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+
+	// Transform to [0,1] range
+	projCoords = projCoords * 0.5 + 0.5;
+
+	// Get depth of current fragment from light's perspective
+	float currentDepth = projCoords.z;
+
+	// PCF - percentage closer filtering
+	// sample shadowmap multiple times at slightly offset positions
+	// and take average
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / textureSize(depthMapTex, 0);
+	int samples = 0;
+	for(int x = -2; x <= 2; ++x)
+	{
+		for(int y = -2; y <= 2; ++y)
+		{
+			float pcfDepth = texture(depthMapTex, projCoords.xy + vec2(x, y) * texelSize).r;
+			shadow += currentDepth > pcfDepth  ? 1.0 : 0.0;
+			samples += 1;
+		}
+	}
+	shadow /= float(samples);
+
+	// Keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
+	if(projCoords.z > 2.0) {
+		shadow = 0.0;
+	}
+
+	// fake ambient light by scaling shadows
+	return shadow * 0.8;
+}
 
 void main()
 {
 	vec4 texVal = texture(tex1, fragUV);
 
 	// simple lambert diffuse shading model
+
 	// calc falloff for spotlight
 	float falloff = 1.0;
 	vec3 lightVector = normalize(lightPos - fragPos);
@@ -198,14 +190,44 @@ void main()
 	} else {
 		falloff = ( fragAngleCos - penumbraCos ) / (coneCos - penumbraCos);
 	}
+	// fake ambient light by scaling falloff
+	falloff = (1.0 - (1.0 - falloff) * 0.9);
+
+	// calc shadow
+	vec4 fragPosLightSpace = lightProj * lightView * vec4( fragPos.x, fragPos.y, fragPos.z, 1.0 );
+	float shadow = calcShadow(fragPosLightSpace);
 
 	float nDotL = max(dot(fragNormal, lightVector), 0.0);
-	outColor = fragColor * texVal * lightColor * lightIntensity * falloff * nDotL;
+	outColor = fragColor * texVal * lightColor * lightIntensity * falloff * (1.0 - shadow) * nDotL;
+}
+"""
+
+strDepthMapVertexShader = """
+#version 330 core
+layout (location = 0) in vec4 vertexPosition;
+
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 proj;
+
+void main()
+{
+	gl_Position = proj * view * model * vertexPosition;
+}
+"""
+
+strDepthMapFragmentShader = """
+#version 330 core
+
+void main()
+{
+   // color = outColor * outIntensity;
 }
 """
 
 # camera globals
 camPosition = numpy.array([10.0, 10.0, 20.0, 1.0], dtype='float32')
+camDirection = numpy.array([-camPosition[0], -camPosition[1], -camPosition[2], 0.0], dtype='float32')
 camUpAxis = numpy.array([0.0, 1.0, 0.0, 0.0], dtype='float32')
 camNear = 1.0
 camFar = 100.0
@@ -213,16 +235,27 @@ camAspect = 1.0
 camFov = 60.0
 
 # objectPosition
-objectPosition = numpy.array([0.0, 5.0, 0.0, 1.0], dtype='float32')
+objectPosition = numpy.array([5.0, 7.0, 5.0, 1.0], dtype='float32')
 groundPosition = numpy.array([0.0, 0.0, 0.0, 1.0], dtype='float32')
 
 # light parameters
-lightPos = numpy.array([10.0, 10.0, 3.0, 1.0], dtype='float32')
-lightDir = numpy.array([-1.0, -1.0, 0.0, 1.0], dtype='float32')
+lightPos = numpy.array([10.0, 10.0, 8.0, 1.0], dtype='float32')
+lightDir = numpy.array([-1.0, -1.2, -0.5, 1.0], dtype='float32')
 lightColor =  numpy.array([1.0, 1.0, 1.0, 1.0], dtype='float32')
-lightIntensity = 1.0
-lightCone = 30
-lightPenumbra = 15
+lightIntensity = 1.5
+lightCone = 20
+lightPenumbra = 30
+lightCamAspect = 1.0
+lightCamFov = 2.0 * (lightCone + lightPenumbra)
+lightCamNear = 1.0
+lightCamFar = 1000.0
+lightUpAxis = numpy.array([0.0, 1.0, 0.0, 0.0], dtype='float32')
+
+# depth map parameters
+depthMapTex = None
+depthMapBuffer = None
+depthMapRes = 2048
+depthMapRendered = False
 
 #
 # FUNCTIONS
@@ -257,14 +290,14 @@ def getProjMatrix(near, far, aspect, fov):
 							0.0, 0.0, term_2_3, 0.0], dtype='float32')
 
 
-def getViewMatrix():
+def getViewMatrix(position, direction, upAxis):
 	# THIS HAS A LOT OF HARD CODED STUFF
 	# we first calculate camera x, y, z axises and from those we assemble a rotation matrix.
 	# Once that is done we add in the translation.
- 	# We assume camera always look at the world space origin.
-	# Up vector is always in the direction of global yAxis.
-	camZAxis = normalize(numpy.array([-camPosition[0], -camPosition[1], -camPosition[2], 0.0], dtype='float32'))
-	camXAxis = cross(camZAxis, camUpAxis)
+ 	# In case of a regular camera we assume camera always look at the world space origin.
+	# In case of a light camera, we map the direction vector to z axis
+	camZAxis = normalize(direction)
+	camXAxis = cross(camZAxis, upAxis)
 	camYAxis = cross(camXAxis, camZAxis)
 
 	rotMat = numpy.array([	camXAxis[0], camYAxis[0], -camZAxis[0], 0.0,
@@ -275,7 +308,7 @@ def getViewMatrix():
 	traMat = numpy.array([	1.0, 0.0, 0.0, 0.0,
 							0.0, 1.0, 0.0, 0.0,
 							0.0, 0.0, 1.0, 0.0,
-							-camPosition[0], -camPosition[1], -camPosition[2], 1.0], dtype='float32').reshape(4,4)
+							-position[0], -position[1], -position[2], 1.0], dtype='float32').reshape(4,4)
 
 	return traMat.dot(rotMat)
 
@@ -330,29 +363,37 @@ def createShader(shaderType, shaderCode):
 			strShaderType = "fragment"
 
 		print(b"Compilation failure for " + strShaderType + b" shader:\n" + strInfoLog)
+	else:
+		print("\tCompiled shader!")
 
 	return shaderID
 
 
 # Initialize the OpenGL environment
 def init():
-	global objectProgramID
+	global objectProgramID, depthMapProgramID
 	global objectVBOData, groundVBOData
 	global VAO_Object, VAO_Ground
 
-	objectProgramID = initProgram(strObjectVertexShader, strObjectFragmentShader)
-	objectVBOData = initVertexBufferData(objectVertexPositions, objectFaces, objectFaceColors, objectVertexUVs)
-	groundVBOData = initVertexBufferData(groundVertexPositions, groundFaces, groundFaceColors, groundVertexUVs)
-	VAO_Object = initVertexBuffer(objectVBOData, nObjectVertices)
-	VAO_Ground = initVertexBuffer(groundVBOData, nGroundVertices)
-	initTextures(objectProgramID, "texture3.png")
+	objectProgramID = initProgram(strObjectVertexShader, strObjectFragmentShader, "Object Shaders")
+	objectVBOData = initVertexBufferData(objectVertexPositions, faces, faceColors)
+	groundVBOData = initVertexBufferData(groundVertexPositions, faces, faceColors)
+	VAO_Object = initVertexBuffer(objectVBOData, nVertices)
+	VAO_Ground = initVertexBuffer(groundVBOData, nVertices)
+
+	initTextures(objectProgramID, "texture4.png")
+
+	depthMapProgramID = initProgram(strDepthMapVertexShader, strDepthMapFragmentShader, "Depth Map Shaders")
+	initDepthMapBuffer()
+
 	initLightParams(objectProgramID)
 
 
 # Set up the list of shaders, and call functions to compile them
-def initProgram(vertexShader, fragmentShader):
+def initProgram(vertexShader, fragmentShader, msg):
 	shaderList = []
 
+	print("Creating " + msg + "...")
 	shaderList.append(createShader(GL_VERTEX_SHADER, vertexShader))
 	shaderList.append(createShader(GL_FRAGMENT_SHADER, fragmentShader))
 
@@ -364,10 +405,10 @@ def initProgram(vertexShader, fragmentShader):
 	return programID
 
 
-def initVertexBufferData(vertexPositions, faces, faceColors, vertexUVs):
+def initVertexBufferData(vertexPositions, faces, faceColors):
 	finalVertexPositions = []
 	finalVertexColors = []
-	finalVertexUvs = []
+	finalVertexUVs = []
 	finalVertexNormals = []
 
 	# go over faces and assemble an array for all vertex data
@@ -385,15 +426,28 @@ def initVertexBufferData(vertexPositions, faces, faceColors, vertexUVs):
 		faceNormal = normalize(cross(edge1, edge2))
 
 		# now assemble arrays
+		uvIndex = 0
 		for vertex in face:
 			finalVertexPositions.extend(vertexPositions[vertex])
 			finalVertexColors.extend(faceColors[faceID])
-			finalVertexUvs.extend(vertexUVs[vertex])
+
+			# this assumes a quad and fully uses the uv range per face
+			if uvIndex == 0:
+				finalVertexUVs.extend ( [ 0.0, 0.0 ] )
+			elif uvIndex == 1:
+				finalVertexUVs.extend ( [ 1.0, 0.0 ] )
+			elif uvIndex == 2:
+				finalVertexUVs.extend ( [ 1.0, 1.0 ] )
+			else:
+				finalVertexUVs.extend ( [ 0.0, 1.0 ] )
+
+			# finalVertexUVs.extend(vertexUVs[vertex])
 			finalVertexNormals.extend(faceNormal)
+			uvIndex += 1
 
 		faceID += 1
 
-	return numpy.array(finalVertexPositions + finalVertexColors + finalVertexUvs + finalVertexNormals, dtype='float32')
+	return numpy.array(finalVertexPositions + finalVertexColors + finalVertexUVs + finalVertexNormals, dtype='float32')
 
 
 # Set up the vertex buffer that will store our vertex coordinates for OpenGL's access
@@ -481,7 +535,7 @@ def loadTexture(texFilename):
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
 
 	# copy texture data
@@ -509,13 +563,77 @@ def initLightParams(programID):
 	glUniform1f(lightConeLocation, lightCone)
 	lightPenumbraLocation = glGetUniformLocation(programID, "lightPenumbra")
 	glUniform1f(lightPenumbraLocation, lightPenumbra)
+	lightViewLocation = glGetUniformLocation( programID, "lightView" )
+	glUniformMatrix4fv(lightViewLocation, 1, GL_FALSE, getViewMatrix(lightPos, lightDir, lightUpAxis))
+	lightProjLocation = glGetUniformLocation( programID, "lightProj" )
+	glUniformMatrix4fv(lightProjLocation, 1, GL_FALSE, getProjMatrix(lightCamNear, lightCamFar, lightCamAspect, lightCamFov))
+	depthMapTexLocation = glGetUniformLocation( programID, "depthMapTex" )
+	glUniform1i(depthMapTexLocation, depthMapTex)
+
+	# now activate texture unit
+	glActiveTexture(GL_TEXTURE0 + depthMapTex)
+	glBindTexture(GL_TEXTURE_2D, depthMapTex)
 
 	# reset program
 	glUseProgram(0)
 
 
+def initDepthMapBuffer():
+	global depthMapTex, depthMapBuffer, depthMapRes
+
+	depthMapTex = glGenTextures(1)
+	glActiveTexture(GL_TEXTURE0 + depthMapTex)
+	glBindTexture(GL_TEXTURE_2D, depthMapTex)
+	glTexImage2D( 	GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+					depthMapRes, depthMapRes, 0,
+					GL_DEPTH_COMPONENT, GL_FLOAT, None )
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
+	# set border color to 1 which means no shadow since it is the max depth value
+	glTexParameterfv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, [1.0, 1.0, 1.0, 1.0] )
+
+	# create a framebuffer
+	depthMapBuffer = glGenFramebuffers(1)
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapBuffer)
+	# bind texture to framebuffers depth attachment
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapTex, 0)
+
+	# tell OpenGL we dont need color buffer as otherwise framebuffer would be incomplete
+	glDrawBuffer(GL_NONE)
+	glReadBuffer(GL_NONE) # to avoid problems with some GPUS supporting only OpenGL3.x
+
+	# unbind buffers for cleanup
+	glBindTexture(GL_TEXTURE_2D, 0)  # unbind texture
+	glActiveTexture(GL_TEXTURE0)  # set active TU to 0 again
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0)  # unbind framebuffer
+
+
+# Called to update the display.
+# Because we are using double-buffering, glutSwapBuffers is called at the end
+# to write the rendered buffer to the display.
+def display():
+	# render depth map
+	renderDepthMap()
+
+	# now reset viewport and do proper render
+	glViewport(0, 0, windowWidth, windowHeight)
+	glClearColor(0.0, 0.0, 0.0, 0.0)
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+	# draw objects
+	viewMatrix = getViewMatrix(camPosition, camDirection, camUpAxis)
+	projMatrix = getProjMatrix(camNear, camFar, camAspect, camFov)
+	draw(objectProgramID, VAO_Object, nVertices, objectPosition, viewMatrix, projMatrix)
+	draw(objectProgramID, VAO_Ground, nVertices, groundPosition, viewMatrix, projMatrix)
+
+	glutSwapBuffers()
+
+
 # called to draw an object
-def draw(programID, VAO, nVertices, location):
+def draw(programID, VAO, nVertices, location, viewMatrix, projMatrix):
 	# use our program
 	glUseProgram(programID)
 
@@ -523,9 +641,9 @@ def draw(programID, VAO, nVertices, location):
 	modelLocation = glGetUniformLocation( programID, "model" )
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, getModelMatrix(location))
 	viewLocation = glGetUniformLocation(programID, "view")
-	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, getViewMatrix())
+	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, viewMatrix)
 	projLocation = glGetUniformLocation(programID, "proj")
-	glUniformMatrix4fv(projLocation, 1, GL_FALSE, getProjMatrix(camNear, camFar, camAspect, camFov))
+	glUniformMatrix4fv(projLocation, 1, GL_FALSE, projMatrix)
 
 	# bind to our VAO
 	glBindVertexArray(VAO)
@@ -538,18 +656,46 @@ def draw(programID, VAO, nVertices, location):
 	glUseProgram(0)
 
 
-# Called to update the display.
-# Because we are using double-buffering, glutSwapBuffers is called at the end
-# to write the rendered buffer to the display.
-def display():
-	glClearColor(0.0, 0.0, 0.0, 0.0)
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+def renderDepthMap():
+	global depthMapRendered, depthMapBuffer, depthMapRes, depthMapTex
 
-	# draw objects
-	draw(objectProgramID, VAO_Object, nObjectVertices, objectPosition)
-	draw(objectProgramID, VAO_Ground, nGroundVertices, groundPosition)
+	if not depthMapRendered:
+		print("Rendering Depth Map Shadows...")
 
-	glutSwapBuffers()
+		# configureshader
+		glUseProgram(depthMapProgramID)
+
+		viewMatrix = getViewMatrix(lightPos, lightDir, lightUpAxis)
+		projMatrix = getProjMatrix(lightCamNear, lightCamFar, lightCamAspect, lightCamFov)
+
+		viewLocation = glGetUniformLocation(depthMapProgramID, "view")
+		projLocation = glGetUniformLocation(depthMapProgramID, "proj")
+
+		# set matrices for view and proj
+		glUniformMatrix4fv(viewLocation, 1, GL_FALSE, viewMatrix)
+		glUniformMatrix4fv(projLocation, 1, GL_FALSE, projMatrix)
+
+		# setup viewport
+		glClearColor(0.0, 0.0, 0.0, 0.0)
+		glViewport(0, 0, depthMapRes, depthMapRes)
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapBuffer )
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+		# cull front faces to improve peter panning!
+		glEnable(GL_CULL_FACE)
+		glCullFace(GL_FRONT)
+
+		# render
+		draw(depthMapProgramID, VAO_Object, nVertices, objectPosition, viewMatrix, projMatrix)
+		draw(depthMapProgramID, VAO_Ground, nVertices, groundPosition, viewMatrix, projMatrix)
+
+		# unbind framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, 0 )
+		glCullFace(GL_BACK) # reset to default
+		glDisable(GL_CULL_FACE) # reset to default
+
+		depthMapRendered = True
+		print("\tDone")
 
 
 # keyboard input handler: exits the program if 'esc' is pressed
@@ -569,11 +715,9 @@ def main():
 	glutInit()
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH)
 
-	width = 500;
-	height = 500;
-	glutInitWindowSize (width, height)
+	glutInitWindowSize (windowWidth, windowHeight)
 
-	glutInitWindowPosition (300, 200)
+	glutInitWindowPosition (300, 100)
 
 	window = glutCreateWindow("CENG487 Hello Depth Map")
 

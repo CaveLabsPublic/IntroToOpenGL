@@ -48,10 +48,10 @@ nFaces = 6
 nVertices = nFaces * 4
 faces = [
 	[0, 1, 2, 3],
-	[0, 4, 5, 1],
-	[1, 5, 6, 2],
-	[2, 6, 7, 3],
-	[3, 7, 4, 0],
+	[4, 5, 1, 0],
+	[5, 6, 2, 1],
+	[6, 7, 3, 2],
+	[7, 4, 0, 3],
 	[7, 6, 5, 4]
 ]
 
@@ -143,6 +143,8 @@ void main()
 	} else {
 		falloff = ( fragAngleCos - penumbraCos ) / (coneCos - penumbraCos);
 	}
+	// fake ambient light by scaling falloff
+	falloff = (1.0 - (1.0 - falloff) * 0.9);
 
 	float nDotL = max(dot(fragNormal, lightVector), 0.0);
 	outColor = fragColor * texVal * lightColor * lightIntensity * falloff * nDotL;
@@ -161,12 +163,12 @@ camFov = 35.0
 objectPosition = numpy.array([0.0, 0.0, 0.0, 1.0], dtype='float32')
 
 # light parameters
-lightPos = numpy.array([0.0, 10.0, 0.0, 1.0], dtype='float32')
-lightDir = numpy.array([0.0, -1.0, 0.0, 1.0], dtype='float32')
+lightPos = numpy.array([10.0, 10.0, 0.0, 1.0], dtype='float32')
+lightDir = numpy.array([-1, -1.0, 0.0, 1.0], dtype='float32')
 lightColor =  numpy.array([1.0, 1.0, 1.0, 1.0], dtype='float32')
 lightIntensity = 1.0
 lightCone = 25
-lightPenumbra = 20
+lightPenumbra = 15
 
 #
 # FUNCTIONS
@@ -307,7 +309,7 @@ def initVertexBufferData():
 
 	finalVertexPositions = []
 	finalVertexColors = []
-	finalVertexUvs = []
+	finalVertexUVs = []
 	finalVertexNormals = []
 
 	# go over faces and assemble an array for all vertex data
@@ -328,12 +330,12 @@ def initVertexBufferData():
 		for vertex in face:
 			finalVertexPositions.extend(vertexPositions[vertex])
 			finalVertexColors.extend(faceColors[faceID])
-			finalVertexUvs.extend(vertexUVs[vertex])
+			finalVertexUVs.extend(vertexUVs[vertex])
 			finalVertexNormals.extend(faceNormal)
 
 		faceID += 1
 
-	VBOData = numpy.array(finalVertexPositions + finalVertexColors + finalVertexUvs + finalVertexNormals, dtype='float32')
+	VBOData = numpy.array(finalVertexPositions + finalVertexColors + finalVertexUVs + finalVertexNormals, dtype='float32')
 
 
 # Set up the vertex buffer that will store our vertex coordinates for OpenGL's access
