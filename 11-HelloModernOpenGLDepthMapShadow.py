@@ -248,7 +248,7 @@ lightPenumbra = 30
 lightCamAspect = 1.0
 lightCamFov = 2.0 * (lightCone + lightPenumbra)
 lightCamNear = 1.0
-lightCamFar = 1000.0
+lightCamFar = 50.0
 lightUpAxis = numpy.array([0.0, 1.0, 0.0, 0.0], dtype='float32')
 
 # depth map parameters
@@ -535,8 +535,8 @@ def loadTexture(texFilename):
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER)
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
 
 	# copy texture data
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image.size[0], image.size[1], 0, GL_RGB, GL_UNSIGNED_BYTE,
