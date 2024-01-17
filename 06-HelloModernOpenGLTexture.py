@@ -17,7 +17,6 @@ programID = None
 
 # Global variables for buffer objects
 VAO = None
-VBO = None
 
 # Global variable for texture
 tex1ID = -1
@@ -235,7 +234,6 @@ def initProgram():
 # Set up the vertex buffer that will store our vertex coordinates for OpenGL's access
 def initVertexBuffer():
 	global VAO
-	global VBO
 
 	VAO = glGenVertexArrays(1)
 	VBO = glGenBuffers(1)

@@ -16,7 +16,6 @@ programID = None
 
 # Global variables for buffer objects
 VAO = None
-VBO = None
 
 # create an array to hold positions of our vertices. numpy array is directly transferable to OpenGL
 # order: top-right, bottom-right, bottom-left, top-left
@@ -212,7 +211,6 @@ def initProgram():
 # Set up the vertex buffer that will store our vertex coordinates for OpenGL's access
 def initVertexBuffer():
 	global VAO
-	global VBO
 
 	VAO = glGenVertexArrays(1)
 	VBO = glGenBuffers(1)

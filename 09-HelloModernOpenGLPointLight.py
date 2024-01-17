@@ -10,16 +10,12 @@ import numpy
 #
 # GLOBALS
 vertexDim = 4
-nFaces = 5
-# assume all polys are quads
-nVertices = nFaces * 4
 
 # Global variable to represent the compiled shader program, written in GLSL
 programID = None
 
 # Global variables for buffer objects
 VAO = None
-VBO = None
 
 # Global array to hold VBO data
 VBOData = None
@@ -49,6 +45,8 @@ vertexPositions = [
 
 # we have 5 faces
 # we store indices of the vertices per face
+nFaces = 5
+nVertices = nFaces * 4
 faces = [
 	[0, 1, 3, 2],
 	[2, 3, 5, 4],
@@ -128,8 +126,8 @@ void main()
 	vec4 texVal = texture(tex1, fragUV);
 
 	// simple lambert diffuse shading model
-	vec3 lightDir = normalize(lightPos - fragPos);
-	float nDotL = max(dot(fragNormal, lightDir), 0.0);
+	vec3 lightVector = normalize(lightPos - fragPos);
+	float nDotL = max(dot(fragNormal, lightVector), 0.0);
 	outColor = fragColor * texVal * lightColor * lightIntensity * nDotL;
 }
 """
@@ -321,7 +319,6 @@ def initVertexBufferData():
 # Set up the vertex buffer that will store our vertex coordinates for OpenGL's access
 def initVertexBuffer():
 	global VAO
-	global VBO
 	global VBOData
 
 	VAO = glGenVertexArrays(1)
@@ -439,7 +436,7 @@ def initLightParams():
 # to write the rendered buffer to the display.
 def display():
 	glClearColor(0.0, 0.0, 0.0, 0.0)
-	glClear(GL_COLOR_BUFFER_BIT)
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
 	# use our program
 	glUseProgram(programID)
@@ -489,6 +486,10 @@ def main():
 	glutInitWindowPosition (300, 200)
 
 	window = glutCreateWindow("CENG488 Hello Triangle")
+
+	# need to enable depth testing and depth funct for proper drawing
+	glDepthFunc(GL_LEQUAL)
+	glEnable(GL_DEPTH_TEST)
 
 	init()
 	glutDisplayFunc(display)
