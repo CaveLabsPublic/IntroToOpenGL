@@ -719,7 +719,7 @@ def main():
 
 	glutInitWindowPosition (300, 100)
 
-	window = glutCreateWindow("CENG487 Hello Depth Map")
+	window = glutCreateWindow(b"CENG487 Hello Depth Map")
 
 	# need to enable depth testing and depth funct for proper drawing
 	glDepthFunc(GL_LEQUAL)

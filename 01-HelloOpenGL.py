@@ -170,7 +170,7 @@ def main():
 	# Okay, like the C version we retain the window id to use when closing, but for those of you new
 	# to Python (like myself), remember this assignment would make the variable local and not global
 	# if it weren't for the global declaration at the start of main.
-	window = glutCreateWindow("CENG487 Development Env Test")
+	window = glutCreateWindow(b"CENG487 Development Env Test")
 
    	# Register the drawing function with glut, BUT in Python land, at least using PyOpenGL, we need to
 	# set the function pointer and invoke a function to actually register the callback, otherwise it

@@ -485,7 +485,7 @@ def main():
 
 	glutInitWindowPosition (300, 200)
 
-	window = glutCreateWindow("CENG488 Hello Triangle")
+	window = glutCreateWindow(b"CENG487 Hello Modern OpenGL")
 
 	# need to enable depth testing and depth funct for proper drawing
 	glDepthFunc(GL_LEQUAL)
